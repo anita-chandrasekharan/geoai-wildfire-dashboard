@@ -1,36 +1,65 @@
-# 🇬🇧 UK Wildfire Predictive GeoAI Catastrophe Dashboard
+# 🔥 UK Wildfire Infrastructure Exposure Dashboard
 
-An advanced, real-time spatial predictive application designed to evaluate critical industrial infrastructure vulnerability against satellite-derived wildfire thermal anomalies across the United Kingdom.
+An interactive geospatial dashboard that shows which UK roads and industrial assets sit downwind of satellite-detected wildfire hotspots, and how that exposure changes with wind speed and direction.
 
-## 🚀 Architectural Overview
-This system couples a high-performance **PostGIS** spatial backend with an interactive Python **Streamlit** dashboard. Instead of relying on static isotropic (circular) risk buffers, the model uses an **anisotropic plume simulation engine** powered by meteorological vectors (wind velocity and bearing angle) to forecast directional fire spread boundaries on the fly. 
+<!-- TODO: add a screenshot or GIF of the dashboard here, e.g. ![Dashboard](docs/dashboard.png) -->
 
-Using an automated spatial routing mechanics pipeline, any infrastructure assets (OpenStreetMap structural footprints) intersecting the predicted danger vector are instantly evaluated using a weighted multi-criteria **Asset Vulnerability Index ($V_i$)**.
+## Why it matters
 
-## 🛠️ Tech Stack
-* **Spatial Database:** PostgreSQL 16 + PostGIS 3.4
-* **Dashboard Interface:** Streamlit (Python Web Framework)
-* **Geospatial Processing Engine:** GeoPandas, Shapely (Affinity Transformations), PyProj
-* **Interactive Map Visualization:** Folium (LeafletJS wrapper)
+Wildfire smoke and spread follow the wind, so a simple circular buffer around a fire under- or over-states which assets are at risk. This project uses wind-aware exposure zones to give insurers, utilities and emergency planners a quicker first look at which infrastructure is in the path of an active fire.
 
-## ⚡ Core Features
-1. **Dynamic Metric Buffering:** Performs projection transformations from geographic `EPSG:4326` to British National Grid `EPSG:27700` in real-time to guarantee mathematically precise metric spacing operations.
-2. **Anisotropic Plume Modeling:** Uses wind vector arrays to translate, scale, and rotate fire spread perimeters downwind.
-3. **Optimized Spatial Architecture:** Implemented PostGIS GiST indexing and runtime checkboxes to prevent client-side browser performance degradation (vector bloat).
+## What it does
 
-## 🔨 Setup & Installation
+1. **Satellite fire detection:** pulls active fire hotspots for the UK from the NASA FIRMS API (VIIRS S-NPP, near-real-time), including fire radiative power (FRP).
+2. **Infrastructure context:** downloads roads and commercial, industrial and warehouse buildings from OpenStreetMap (Overpass API) around the most intense fires.
+3. **Spatial database:** stores everything in PostgreSQL + PostGIS with GiST spatial indexes.
+4. **Wind-driven exposure zones:** for each fire, builds an elliptical exposure zone that is stretched, shifted and rotated downwind based on wind speed and bearing. Distances are computed in British National Grid (EPSG:27700) so buffers are in true metres.
+5. **Interactive dashboard:** a Streamlit + Folium app where you move the wind sliders and see which roads and assets fall inside the exposure zones.
 
-1. **Clone the Repository:**
-   ```bash
-   git clone [https://github.com/dspawar/wildfire-geoai-catastrophe-dashboard.git](https://github.com/dspawar/wildfire-geoai-catastrophe-dashboard.git)
-   cd wildfire-geoai-catastrophe-dashboard
+## Tech stack
 
- 1.  Configure Environment & Dependencies:
-  ```bash
-   conda create -n geoai_bigdata_env python=3.10
-    conda activate geoai_bigdata_env
-    pip install -r requirements.txt
+Python · NASA FIRMS · OpenStreetMap / Overpass · PostgreSQL + PostGIS · GeoPandas · Shapely · PyProj · Streamlit · Folium
 
- 2.   Run the Application:
-    ```bash
-    streamlit run src/app.py
+## Project structure
+
+| File | Purpose |
+| --- | --- |
+| `app.py` | Streamlit dashboard (reads the snapshot files in `data/`) |
+| `data_from_NASA.py` | Fetches FIRMS hotspots into PostGIS |
+| `fetch_all_infrastructure.py`, `download_uk_infrastructure.py` | Fetch OSM roads and buildings into PostGIS |
+| `generate_risk_map.py` | Builds a static HTML risk map (`wildfire_risk_map.html`) |
+| `read_data.py` | Exports PostGIS tables to the snapshot files in `data/` |
+| `config.py` | Reads API keys and database settings from `.env` |
+
+## Run the dashboard
+
+The dashboard runs from the snapshot files in `data/`, so no database or API key is needed.
+
+```bash
+git clone https://github.com/anita-chandrasekharan/geoai-wildfire-dashboard.git
+cd geoai-wildfire-dashboard
+pip install -r requirements.txt
+streamlit run app.py
+```
+
+## Rebuild the data (optional)
+
+This needs a local PostGIS database and a free [NASA FIRMS MAP_KEY](https://firms.modaps.eosdis.nasa.gov/api/map_key/).
+
+```bash
+pip install -r requirements-pipeline.txt
+cp .env.example .env        # then add your FIRMS key and database password
+python data_from_NASA.py
+python fetch_all_infrastructure.py
+python read_data.py         # refresh the snapshots used by the dashboard
+```
+
+## Limitations and next steps
+
+- Exposure zones are a simple geometric wind model, not a physical fire-spread or smoke-dispersion model.
+- Wind is set by the user; a next step is to pull live wind from a weather API (for example Open-Meteo).
+- Planned: an asset vulnerability score combining distance, asset type and FRP, and a machine-learning model of fire likelihood from vegetation (NDVI), weather and terrain.
+
+## Author
+
+**Dr. Anita Chandrasekharan**, Remote Sensing & GIS (PhD, IIT Bombay) · [LinkedIn](https://www.linkedin.com/in/anita-chandrasekharan/)

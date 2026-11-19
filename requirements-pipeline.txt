@@ -1,0 +1,8 @@
+# Extra packages for the data pipeline scripts (PostGIS + NASA FIRMS + OSM).
+# The dashboard itself only needs requirements.txt.
+-r requirements.txt
+requests
+sqlalchemy
+psycopg2-binary
+pyproj
+python-dotenv
