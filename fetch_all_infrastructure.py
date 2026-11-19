@@ -1,7 +1,6 @@
 import os
 import sys
 import time
-import urllib.parse
 import requests
 from sqlalchemy import create_engine
 import pandas as pd
@@ -9,19 +8,18 @@ import pandas as pd
 # =====================================================================
 # 0. DEEP PYPROJ ENVIROMENT & DATABASE CONTEXT LOCK
 # =====================================================================
-# Hardcoded absolute path to your active Conda environment's PROJ share folder
-PROJ_TARGET_DIR = r"C:\Users\D S PAWAR\miniconda3\envs\geoai_bigdata_env\Library\share\proj"
+# On Windows/conda, point PROJ at the active environment's data folder.
+# Works on any machine: no hardcoded user paths.
+PROJ_TARGET_DIR = os.path.join(sys.prefix, "Library", "share", "proj")
+if os.path.exists(PROJ_TARGET_DIR):
+    os.environ["PROJ_DATA"] = PROJ_TARGET_DIR
+    os.environ["PROJ_LIB"] = PROJ_TARGET_DIR
+    import pyproj
 
-# Set system-level environment flags
-os.environ["PROJ_DATA"] = PROJ_TARGET_DIR
-os.environ["PROJ_LIB"] = PROJ_TARGET_DIR
-
-# Import pyproj directly and force-inject the database directory path
-import pyproj
-try:
-    pyproj.datadir.set_data_dir(PROJ_TARGET_DIR)
-except Exception as e:
-    print(f"ℹ️ Core patch note: {e}")
+    try:
+        pyproj.datadir.set_data_dir(PROJ_TARGET_DIR)
+    except Exception as e:
+        print(f"ℹ️ Core patch note: {e}")
 
 # Now safe to import spatial libraries
 import geopandas as gpd
@@ -30,10 +28,9 @@ from shapely.geometry import LineString, Polygon
 # =====================================================================
 # 1. DATABASE CONNECTION
 # =====================================================================
-RAW_PASSWORD = "anita-geoai"  # Update with your database password
-encoded_password = urllib.parse.quote_plus(RAW_PASSWORD)
+from config import database_url
 
-engine = create_engine(f"postgresql://postgres:{encoded_password}@127.0.0.1:5433/uk_cat_model")
+engine = create_engine(database_url())  # credentials come from .env
 
 print("🔌 Connected to PostGIS. Extracting active land fire coordinates...")
 

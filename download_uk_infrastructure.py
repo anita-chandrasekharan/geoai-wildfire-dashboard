@@ -1,6 +1,5 @@
 import os
 import sys
-import urllib.parse
 
 # =====================================================================
 # 0. PYPROJ WINDOWS ENVIRONMENT PATCH
@@ -18,16 +17,9 @@ from sqlalchemy import create_engine, text
 # =====================================================================
 # 1. DATABASE CONFIGURATION
 # =====================================================================
-RAW_PASSWORD = "anita-geoai"  # Update with your real password
+from config import database_url
 
-encoded_password = urllib.parse.quote_plus(RAW_PASSWORD)
-USERNAME = "postgres"
-HOST = "127.0.0.1"  
-PORT = "5433"       
-DATABASE = "uk_cat_model"
-
-connection_string = f"postgresql://{USERNAME}:{encoded_password}@{HOST}:{PORT}/{DATABASE}"
-engine = create_engine(connection_string)
+engine = create_engine(database_url())  # credentials come from .env
 
 # =====================================================================
 # 2. DYNAMICALLY TARGET THE HIGHEST INTENSITY HAZARD ZONE

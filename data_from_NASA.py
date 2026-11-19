@@ -1,27 +1,13 @@
 import io
-import urllib.parse  # <-- Add this import at the top
 import pandas as pd
 import requests
 from sqlalchemy import create_engine, text
 
-# 1. Configuration Settings
-MAP_KEY = "db9b0ba991150c2b2b68ebdebd3e9843"
-RAW_PASSWORD = "anita-geoai"  # <-- Put your raw password here
+from config import database_url, require_firms_key
 
-# This safely translates symbols like @ to %40 so the database engine can read it
-encoded_password = urllib.parse.quote_plus(RAW_PASSWORD)
-
-# Database Connection Details
-USERNAME = "postgres"
-HOST = "127.0.0.1"
-PORT = "5433"
-DATABASE = "uk_cat_model"
-
-# Use the encoded_password variable here
-connection_string = (
-    f"postgresql://{USERNAME}:{encoded_password}@{HOST}:{PORT}/{DATABASE}"
-)
-engine = create_engine(connection_string)
+# 1. Configuration Settings (read from .env, see .env.example)
+MAP_KEY = require_firms_key()
+engine = create_engine(database_url())
 
 
 # 2. Define the NASA Area API parameters

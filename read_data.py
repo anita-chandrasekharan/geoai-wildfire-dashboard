@@ -4,13 +4,14 @@ import geopandas as gpd
 from sqlalchemy import create_engine
 from shapely.wkt import loads as load_wkt
 
-# 1. Target Directory Configuration
-TARGET_DIR = r"E:\GeoAI\Wildfire_UK\data"
+from config import DATA_DIR, database_url
+
+# 1. Target Directory Configuration (defaults to ./data, override with DATA_DIR)
+TARGET_DIR = str(DATA_DIR)
 os.makedirs(TARGET_DIR, exist_ok=True)
 
-# 2. Database Connection (Update with your real password and database name!)
-DATABASE_URL = "postgresql://postgres:anita-geoai@localhost:5433/uk_cat_model"
-engine = create_engine(DATABASE_URL)
+# 2. Database Connection (credentials come from .env, see .env.example)
+engine = create_engine(database_url())
 
 print("🔗 Connected to PostGIS database successfully.")
 
